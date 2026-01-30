@@ -1,269 +1,98 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Montgomery 3D Virtual Tour</title>
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <style>
-      body { margin: 0; font-family: system-ui, Arial, sans-serif; }
-      .hint {
-        position: fixed; left: 12px; bottom: 12px;
-        background: rgba(0,0,0,0.65); color: #fff;
-        padding: 10px 12px; border-radius: 10px; font-size: 14px;
-        max-width: 520px; line-height: 1.25;
-      }
-      .hint b { font-weight: 700; }
-    </style>
-  </head>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Montgomery: Where American History Converges</title>
 
-  <body>
-    <div class="hint">
-      <b>How to explore:</b> Click a station to open its placard. Use WASD (or arrow keys) to move, mouse to look.
-      <br/><b>Teacher tip:</b> Tell students: “Slow down. Look around. Read. Then answer.”
-    </div>
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 
-    <a-scene background="color: #0b1320">
-      <!-- Lighting -->
-      <a-entity light="type: ambient; intensity: 0.7"></a-entity>
-      <a-entity light="type: directional; intensity: 0.8" position="2 6 3"></a-entity>
+  <style>
+    body { margin: 0; font-family: system-ui, Arial, sans-serif; }
 
-      <!-- Ground + simple room vibe -->
-      <a-plane position="0 0 0" rotation="-90 0 0" width="32" height="32" color="#162033"></a-plane>
-      <a-ring position="0 0.02 0" rotation="-90 0 0" radius-inner="6.8" radius-outer="7.2" color="#2b3a5c"></a-ring>
+    .hint {
+      position: fixed;
+      left: 12px;
+      bottom: 12px;
+      background: rgba(0,0,0,0.65);
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      max-width: 560px;
+      line-height: 1.25;
+      z-index: 10;
+    }
 
-      <!-- Camera + controls -->
-      <a-entity id="rig" position="0 1.6 6">
-        <a-camera wasd-controls="acceleration: 28" look-controls="pointerLockEnabled: false">
-          <a-cursor></a-cursor>
-        </a-camera>
-      </a-entity>
+    #overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.88);
+      z-index: 9999;
+      padding: 12px;
+    }
 
-      <!-- Title sign -->
-      <a-entity position="0 3.2 -6">
-        <a-plane width="10" height="1.2" color="#1f2c49"></a-plane>
-        <a-text value="Montgomery: Where American History Converges" align="center" color="#ffffff"
-                position="0 0 0.01" width="12"></a-text>
-        <a-text value="Click stations for placards • Use WASD / arrows to move" align="center" color="#cfd8ff"
-                position="0 -0.45 0.01" width="10"></a-text>
-      </a-entity>
+    #overlayInner {
+      display: flex;
+      gap: 12px;
+      height: calc(100vh - 24px);
+    }
 
-      <!-- ---------- Helpers: show/hide placards + next/back ---------- -->
-      <script>
-        AFRAME.registerComponent("toggle-placard", {
-          schema: { target: { type: "selector" } },
-          init: function () {
-            const target = this.data.target;
-            this.el.addEventListener("click", () => {
-              const visible = target.getAttribute("visible");
-              target.setAttribute("visible", !visible);
-            });
-          }
-        });
+    #streetViewPanel {
+      flex: 2;
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+    }
 
-        AFRAME.registerComponent("show-only", {
-          schema: { id: { type: "string" } },
-          init: function () {
-            this.el.addEventListener("click", () => {
-              const all = document.querySelectorAll(".placard");
-              all.forEach(p => p.setAttribute("visible", false));
-              const target = document.getElementById(this.data.id);
-              if (target) target.setAttribute("visible", true);
-            });
-          }
-        });
+    #placardPanel {
+      flex: 1;
+      background: #101a2e;
+      color: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      overflow: auto;
+    }
 
-        AFRAME.registerComponent("tour-nav", {
-          schema: { dir: { type: "string" }, current: { type: "string" } },
-          init: function () {
-            const order = ["p1","p2","p3","p4","p5","p6","p7"];
-            this.el.addEventListener("click", () => {
-              const all = document.querySelectorAll(".placard");
-              all.forEach(p => p.setAttribute("visible", false));
+    #placardTitle {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
 
-              const idx = order.indexOf(this.data.current);
-              if (idx < 0) return;
+    #placardBody {
+      font-size: 14px;
+      line-height: 1.35;
+    }
 
-              let nextIdx = idx;
-              if (this.data.dir === "next") nextIdx = Math.min(order.length - 1, idx + 1);
-              if (this.data.dir === "back") nextIdx = Math.max(0, idx - 1);
+    .btnRow {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
 
-              const target = document.getElementById(order[nextIdx]);
-              if (target) target.setAttribute("visible", true);
-            });
-          }
-        });
-      </script>
+    button {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
 
-      <!-- ---------- Station layout ---------- -->
-      <!-- Each station: pedestal + label + clickable “screen” -->
-      <!-- Replace the color panels later with images or 360 “windows” -->
+    .danger {
+      background: #7a2f2f;
+      color: #fff;
+    }
+  </style>
 
-      <!-- STATION 1 -->
-      <a-entity position="-6 0 -2">
-        <a-cylinder height="0.6" radius="0.6" color="#26395f" position="0 0.3 0"></a-cylinder>
-        <a-text value="1) Capitol: Power & Government" position="0 1.3 0" align="center" color="#ffffff" width="4"></a-text>
-        <a-plane width="2.6" height="1.5" color="#35528a" position="0 1.0 0.01"
-                 toggle-placard="target: #p1"></a-plane>
-      </a-entity>
-
-      <!-- STATION 2 -->
-      <a-entity position="-3 0 -6">
-        <a-cylinder height="0.6" radius="0.6" color="#26395f" position="0 0.3 0"></a-cylinder>
-        <a-text value="2) Court Square: Enslavement & Silence" position="0 1.3 0" align="center" color="#ffffff" width="4"></a-text>
-        <a-plane width="2.6" height="1.5" color="#6b4a2a" position="0 1.0 0.01"
-                 toggle-placard="target: #p2"></a-plane>
-      </a-entity>
-
-      <!-- STATION 3 -->
-      <a-entity position="2 0 -7">
-        <a-cylinder height="0.6" radius="0.6" color="#26395f" position="0 0.3 0"></a-cylinder>
-        <a-text value="3) Rosa Parks: Everyday Resistance" position="0 1.3 0" align="center" color="#ffffff" width="4"></a-text>
-        <a-plane width="2.6" height="1.5" color="#2b6b4a" position="0 1.0 0.01"
-                 toggle-placard="target: #p3"></a-plane>
-      </a-entity>
-
-      <!-- STATION 4 -->
-      <a-entity position="6 0 -3">
-        <a-cylinder height="0.6" radius="0.6" color="#26395f" position="0 0.3 0"></a-cylinder>
-        <a-text value="4) Dexter Ave: Organizing & Community" position="0 1.3 0" align="center" color="#ffffff" width="4"></a-text>
-        <a-plane width="2.6" height="1.5" color="#7b2f5f" position="0 1.0 0.01"
-                 toggle-placard="target: #p4"></a-plane>
-      </a-entity>
-
-      <!-- STATION 5 -->
-      <a-entity position="7 0 2">
-        <a-cylinder height="0.6" radius="0.6" color="#26395f" position="0 0.3 0"></a-cylinder>
-        <a-text value="5) Routes: Protest & Pressure" position="0 1.3 0" align="center" color="#ffffff" width="4"></a-text>
-        <a-plane width="2.6" height="1.5" color="#875e2a" position="0 1.0 0.01"
-                 toggle-placard="target: #p5"></a-plane>
-      </a-entity>
-
-      <!-- STATION 6 -->
-      <a-entity position="3 0 6">
-        <a-cylinder height="0.6" radius="0.6" color="#26395f" position="0 0.3 0"></a-cylinder>
-        <a-text value="6) Memorial: Memory & Reckoning" position="0 1.3 0" align="center" color="#ffffff" width="4"></a-text>
-        <a-plane width="2.6" height="1.5" color="#5b5b6f" position="0 1.0 0.01"
-                 toggle-placard="target: #p6"></a-plane>
-      </a-entity>
-
-      <!-- STATION 7 -->
-      <a-entity position="-3 0 6">
-        <a-cylinder height="0.6" radius="0.6" color="#26395f" position="0 0.3 0"></a-cylinder>
-        <a-text value="7) Add-a-Stop (Student)" position="0 1.3 0" align="center" color="#ffffff" width="4"></a-text>
-        <a-plane width="2.6" height="1.5" color="#2a4f87" position="0 1.0 0.01"
-                 toggle-placard="target: #p7"></a-plane>
-      </a-entity>
-
-      <!-- ---------- Placards (hidden until clicked) ---------- -->
-      <!-- Placard template: big plane + text + next/back buttons -->
-      <!-- Tip: Keep text short for readability in VR. -->
-
-      <a-entity id="p1" class="placard" visible="false" position="0 2.2 0">
-        <a-plane width="10" height="5.6" color="#101a2e"></a-plane>
-        <a-text value="STOP 1 — Alabama State Capitol\n\nHISTORICAL READ-OUT:\nThis building represents political power across multiple eras. It symbolizes how laws and enforcement shaped access to rights—and how movements challenged that power.\n\nLOOK AROUND:\nNotice elevation, visibility, and what the building overlooks.\n\nREFLECT:\n1) Who was power designed to serve here?\n2) Why march toward this building?"
-                color="#ffffff" width="9.2" position="-4.7 2.5 0.02"></a-text>
-
-        <a-plane width="1.6" height="0.6" color="#2b3a5c" position="-3.2 -2.3 0.03" tour-nav="dir:back; current:p1"></a-plane>
-        <a-text value="Back" align="center" color="#ffffff" position="-3.2 -2.3 0.04" width="4"></a-text>
-
-        <a-plane width="1.6" height="0.6" color="#2b3a5c" position="-1.2 -2.3 0.03" tour-nav="dir:next; current:p1"></a-plane>
-        <a-text value="Next" align="center" color="#ffffff" position="-1.2 -2.3 0.04" width="4"></a-text>
-
-        <a-plane width="2.4" height="0.6" color="#5a2b2b" position="2.8 -2.3 0.03" toggle-placard="target:#p1"></a-plane>
-        <a-text value="Close" align="center" color="#ffffff" position="2.8 -2.3 0.04" width="4"></a-text>
-      </a-entity>
-
-      <a-entity id="p2" class="placard" visible="false" position="0 2.2 0">
-        <a-plane width="10" height="5.6" color="#101a2e"></a-plane>
-        <a-text value="STOP 2 — Court Square\n\nHISTORICAL READ-OUT:\nThis area was historically connected to the buying and selling of enslaved people. Today it looks ordinary—raising questions about memory and erasure.\n\nLOOK AROUND:\nWhat is marked? What is missing?\n\nREFLECT:\n1) Why might sites of trauma be less visible?\n2) What does everyday normalcy ‘cover up’?"
-                color="#ffffff" width="9.2" position="-4.7 2.5 0.02"></a-text>
-
-        <a-plane width="1.6" height="0.6" color="#2b3a5c" position="-3.2 -2.3 0.03" tour-nav="dir:back; current:p2"></a-plane>
-        <a-text value="Back" align="center" color="#ffffff" position="-3.2 -2.3 0.04" width="4"></a-text>
-
-        <a-plane width="1.6" height="0.6" color="#2b3a5c" position="-1.2 -2.3 0.03" tour-nav="dir:next; current:p2"></a-plane>
-        <a-text value="Next" align="center" color="#ffffff" position="-1.2 -2.3 0.04" width="4"></a-text>
-
-        <a-plane width="2.4" height="0.6" color="#5a2b2b" position="2.8 -2.3 0.03" toggle-placard="target:#p2"></a-plane>
-        <a-text value="Close" align="center" color="#ffffff" position="2.8 -2.3 0.04" width="4"></a-text>
-      </a-entity>
-
-      <a-entity id="p3" class="placard" visible="false" position="0 2.2 0">
-        <a-plane width="10" height="5.6" color="#101a2e"></a-plane>
-        <a-text value="STOP 3 — Rosa Parks Museum\n\nHISTORICAL READ-OUT:\nRosa Parks’s resistance helped spark the Montgomery Bus Boycott. This shows how change begins with ordinary people making difficult choices.\n\nLOOK AROUND:\nNotice how normal the setting feels.\n\nREFLECT:\n1) Why does it matter that resistance started in an everyday place?\n2) What risks exist when resisting publicly?"
-                color="#ffffff" width="9.2" position="-4.7 2.5 0.02"></a-text>
-
-        <a-plane width="1.6" height="0.6" color="#2b3a5c" position="-3.2 -2.3 0.03" tour-nav="dir:back; current:p3"></a-plane>
-        <a-text value="Back" align="center" color="#ffffff" position="-3.2 -2.3 0.04" width="4"></a-text>
-
-        <a-plane width="1.6" height="0.6" color="#2b3a5c" position="-1.2 -2.3 0.03" tour-nav="dir:next; current:p3"></a-plane>
-        <a-text value="Next" align="center" color="#ffffff" position="-1.2 -2.3 0.04" width="4"></a-text>
-
-        <a-plane width="2.4" height="0.6" color="#5a2b2b" position="2.8 -2.3 0.03" toggle-placard="target:#p3"></a-plane>
-        <a-text value="Close" align="center" color="#ffffff" position="2.8 -2.3 0.04" width="4"></a-text>
-      </a-entity>
-
-      <a-entity id="p4" class="placard" visible="false" position="0 2.2 0">
-        <a-plane width="10" height="5.6" color="#101a2e"></a-plane>
-        <a-text value="STOP 4 — Dexter Avenue King Memorial Baptist Church\n\nHISTORICAL READ-OUT:\nThis church functioned as an organizing space during the Bus Boycott era—showing how community institutions support strategy and sustained action.\n\nLOOK AROUND:\nNotice proximity to government buildings.\n\nREFLECT:\n1) Why might closeness to political power matter?\n2) How can community spaces become political spaces?"
-                color="#ffffff" width="9.2" position="-4.7 2.5 0.02"></a-text>
-
-        <a-plane width="1.6" height="0.6" color="#2b3a5c" position="-3.2 -2.3 0.03" tour-nav="dir:back; current:p4"></a-plane>
-        <a-text value="Back" align="center" color="#ffffff" position="-3.2 -2.3 0.04" width="4"></a-text>
-
-        <a-plane width="1.6" height="0.6" color="#2b3a5c" position="-1.2 -2.3 0.03" tour-nav="dir:next; current:p4"></a-plane>
-        <a-text value="Next" align="center" color="#ffffff" position="-1.2 -2.3 0.04" width="4"></a-text>
-
-        <a-plane width="2.4" height="0.6" color="#5a2b2b" position="2.8 -2.3 0.03" toggle-placard="target:#p4"></a-plane>
-        <a-text value="Close" align="center" color="#ffffff" position="2.8 -2.3 0.04" width="4"></a-text>
-      </a-entity>
-
-      <a-entity id="p5" class="placard" visible="false" position="0 2.2 0">
-        <a-plane width="10" height="5.6" color="#101a2e"></a-plane>
-        <a-text value="STOP 5 — Downtown Boycott Routes\n\nHISTORICAL READ-OUT:\nDuring the boycott, thousands walked or organized carpools for months. Sustained protest applied economic pressure and required collective sacrifice.\n\nLOOK AROUND:\nEstimate walking distances and route choices.\n\nREFLECT:\n1) What does geography reveal about the cost of protest?\n2) Why is sustained protest harder than one-time action?"
-                color="#ffffff" width="9.2" position="-4.7 2.5 0.02"></a-text>
-
-        <a-plane width="1.6" height="0.6" color="#2b3a5c" position="-3.2 -2.3 0.03" tour-nav="dir:back; current:p5"></a-plane>
-        <a-text value="Back" align="center" color="#ffffff" position="-3.2 -2.3 0.04" width="4"></a-text>
-
-        <a-plane width="1.6" height="0.6" color="#2b3a5c" position="-1.2 -2.3 0.03" tour-nav="dir:next; current:p5"></a-plane>
-        <a-text value="Next" align="center" color="#ffffff" position="-1.2 -2.3 0.04" width="4"></a-text>
-
-        <a-plane width="2.4" height="0.6" color="#5a2b2b" position="2.8 -2.3 0.03" toggle-placard="target:#p5"></a-plane>
-        <a-text value="Close" align="center" color="#ffffff" position="2.8 -2.3 0.04" width="4"></a-text>
-      </a-entity>
-
-      <a-entity id="p6" class="placard" visible="false" position="0 2.2 0">
-        <a-plane width="10" height="5.6" color="#101a2e"></a-plane>
-        <a-text value="STOP 6 — National Memorial for Peace and Justice\n\nHISTORICAL READ-OUT:\nThis memorial confronts racial terror and lynching in U.S. history. The design is meant to shape how visitors feel and reflect on legacy.\n\nLOOK AROUND:\nNotice design choices and emotional impact.\n\nREFLECT:\n1) Why design a memorial to create discomfort?\n2) What happens when societies avoid remembering hard history?"
-                color="#ffffff" width="9.2" position="-4.7 2.5 0.02"></a-text>
-
-        <a-plane width="1.6" height="0.6" color="#2b3a5c" position="-3.2 -2.3 0.03" tour-nav="dir:back; current:p6"></a-plane>
-        <a-text value="Back" align="center" color="#ffffff" position="-3.2 -2.3 0.04" width="4"></a-text>
-
-        <a-plane width="1.6" height="0.6" color="#2b3a5c" position="-1.2 -2.3 0.03" tour-nav="dir:next; current:p6"></a-plane>
-        <a-text value="Next" align="center" color="#ffffff" position="-1.2 -2.3 0.04" width="4"></a-text>
-
-        <a-plane width="2.4" height="0.6" color="#5a2b2b" position="2.8 -2.3 0.03" toggle-placard="target:#p6"></a-plane>
-        <a-text value="Close" align="center" color="#ffffff" position="2.8 -2.3 0.04" width="4"></a-text>
-      </a-entity>
-
-      <a-entity id="p7" class="placard" visible="false" position="0 2.2 0">
-        <a-plane width="10" height="5.6" color="#101a2e"></a-plane>
-        <a-text value="STOP 7 — Student Add-a-Stop\n\nYOUR TASK:\nChoose a place that belongs in this tour.\n\nInclude:\n• Era(s)\n• Why it matters (what happened + why it belongs)\n• Look around (what details should viewers notice?)\n• One thoughtful question\n\nTheme options: power, resistance, community organizing, memory."
-                color="#ffffff" width="9.2" position="-4.7 2.5 0.02"></a-text>
-
-        <a-plane width="1.6" height="0.6" color="#2b3a5c" position="-3.2 -2.3 0.03" tour-nav="dir:back; current:p7"></a-plane>
-        <a-text value="Back" align="center" color="#ffffff" position="-3.2 -2.3 0.04" width="4"></a-text>
-
-        <a-plane width="1.6" height="0.6" color="#2b3a5c" position="-1.2 -2.3 0.03" tour-nav="dir:next; current:p7"></a-plane>
-        <a-text value="Next" align="center" color="#ffffff" position="-1.2 -2.3 0.04" width="4"></a-text>
-
-        <a-plane width="2.4" height="0.6" color="#5a2b2b" position="2.8 -2.3 0.03" toggle-placard="target:#p7"></a-plane>
-        <a-text value="Close" align="center" color="#ffffff" position="2.8 -2.3 0.04" width="4"></a-text>
-      </a-entity>
-
-    </a-scene>
-  </body>
-</html>
+  <script>
+    /* =====================
+       GOOGLE STREET VIEW EMBEDS
+       ===================== */
+    const EMBED = {
+      stop1: "https://www.google.com/maps/embed?pb=!4v1769809550377!6m8!1m7!1sCAoSF0NJSE0wb2dLRUlDQWdJQzRxb3luekFF!2m2!1d32.37705521568272!2d-86.300345924515!3f358.20204604683346!4f10.293438786272901!5f0.7820865974627469",
+      stop2: "https://www.google.com/maps/embed?pb=!4v1769809730972!6m8!1m7!1sq5zSn5iwqfjHi73vcj2nwQ!2m2!1d32.37726860765179!2d-86.3090617218252!3f55.51995094136487!4f-12.266507852019544!5f0.7820865974627469",
+      stop3: "https://www.google.com/maps/embed?pb=!4v1769809842696!6m8!1m7!1szcb7f9b98VENXTln1PvHdg!2m2!1d32.37634110654851!2d-86.31134196913585!3f307.1330858211799!4f4.064074151752919!5f0.7820865974627469",
+      stop4: "https://www.google.com/maps/embed?pb=!4v1769809
