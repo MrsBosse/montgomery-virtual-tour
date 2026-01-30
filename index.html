@@ -88,11 +88,190 @@
   </style>
 
   <script>
-    /* =====================
-       GOOGLE STREET VIEW EMBEDS
-       ===================== */
+    // Street View embed URLs (your stops 1–6)
     const EMBED = {
       stop1: "https://www.google.com/maps/embed?pb=!4v1769809550377!6m8!1m7!1sCAoSF0NJSE0wb2dLRUlDQWdJQzRxb3luekFF!2m2!1d32.37705521568272!2d-86.300345924515!3f358.20204604683346!4f10.293438786272901!5f0.7820865974627469",
       stop2: "https://www.google.com/maps/embed?pb=!4v1769809730972!6m8!1m7!1sq5zSn5iwqfjHi73vcj2nwQ!2m2!1d32.37726860765179!2d-86.3090617218252!3f55.51995094136487!4f-12.266507852019544!5f0.7820865974627469",
       stop3: "https://www.google.com/maps/embed?pb=!4v1769809842696!6m8!1m7!1szcb7f9b98VENXTln1PvHdg!2m2!1d32.37634110654851!2d-86.31134196913585!3f307.1330858211799!4f4.064074151752919!5f0.7820865974627469",
-      stop4: "https://www.google.com/maps/embed?pb=!4v1769809
+      stop4: "https://www.google.com/maps/embed?pb=!4v1769809908088!6m8!1m7!1s6HG1OIYSHBy3HlHdTTmIUA!2m2!1d32.37760128260103!2d-86.30275987439865!3f172.3463!4f0!5f0.7820865974627469",
+      stop5: "https://www.google.com/maps/embed?pb=!4v1769809961700!6m8!1m7!1sdx3VFrkyBZ3WHHtmc9mL8A!2m2!1d32.37756031673418!2d-86.3051193660069!3f336.35081739763206!4f-6.760502022971252!5f0.7820865974627469",
+      stop6: "https://www.google.com/maps/embed?pb=!4v1769810003562!6m8!1m7!1sCAoSF0NJSE0wb2dLRUlDQWdJRFV1ODNtNUFF!2m2!1d32.37290701248501!2d-86.31324997851927!3f318.14355!4f0!5f0.7820865974627469"
+    };
+
+    const stops = [
+      {
+        title: "STOP 1 — Alabama State Capitol",
+        embed: EMBED.stop1,
+        body: `
+          <b>Historical Read-Out:</b><br>
+          A long-standing center of political power. Decisions made here shaped rights, enforcement, and resistance across eras.<br><br>
+          <b>Look Around:</b><br>
+          Notice elevation, visibility, and what the building overlooks.<br><br>
+          <b>Reflect:</b><br>
+          Who was power designed to serve here? Why might activists move toward this space?
+        `
+      },
+      {
+        title: "STOP 2 — Court Square",
+        embed: EMBED.stop2,
+        body: `
+          <b>Historical Read-Out:</b><br>
+          This area was historically tied to the buying and selling of enslaved people. Today it appears ordinary.<br><br>
+          <b>Look Around:</b><br>
+          What is marked? What is missing?<br><br>
+          <b>Reflect:</b><br>
+          Why are some histories harder to see in public spaces?
+        `
+      },
+      {
+        title: "STOP 3 — Rosa Parks Museum Area",
+        embed: EMBED.stop3,
+        body: `
+          <b>Historical Read-Out:</b><br>
+          Rosa Parks’s refusal to give up her seat sparked the Montgomery Bus Boycott—showing how change can begin in everyday places.<br><br>
+          <b>Look Around:</b><br>
+          How ordinary does this setting feel?<br><br>
+          <b>Reflect:</b><br>
+          Why does everyday resistance matter?
+        `
+      },
+      {
+        title: "STOP 4 — Dexter Avenue King Memorial Baptist Church",
+        embed: EMBED.stop4,
+        body: `
+          <b>Historical Read-Out:</b><br>
+          A key organizing site during the boycott era—showing the power of community institutions.<br><br>
+          <b>Look Around:</b><br>
+          Notice proximity to government buildings.<br><br>
+          <b>Reflect:</b><br>
+          How can community spaces become political spaces?
+        `
+      },
+      {
+        title: "STOP 5 — Downtown Boycott Routes",
+        embed: EMBED.stop5,
+        body: `
+          <b>Historical Read-Out:</b><br>
+          Thousands walked or carpooled for months. Sustained protest required endurance and collective commitment.<br><br>
+          <b>Look Around:</b><br>
+          Estimate walking distances and route choices.<br><br>
+          <b>Reflect:</b><br>
+          What does geography reveal about the cost of protest?
+        `
+      },
+      {
+        title: "STOP 6 — National Memorial for Peace and Justice",
+        embed: EMBED.stop6,
+        body: `
+          <b>Historical Read-Out:</b><br>
+          This memorial confronts racial terror and the legacy of lynching in American history.<br><br>
+          <b>Look Around:</b><br>
+          How does the design shape emotion and reflection?<br><br>
+          <b>Reflect:</b><br>
+          Why might discomfort be necessary for remembrance?
+        `
+      }
+    ];
+
+    let currentStop = 0;
+
+    function openStop(index) {
+      currentStop = index;
+      document.getElementById("placardTitle").innerText = stops[index].title;
+      document.getElementById("placardBody").innerHTML = stops[index].body;
+      document.getElementById("svFrame").src = stops[index].embed;
+      document.getElementById("overlay").style.display = "block";
+    }
+
+    function closeOverlay() {
+      document.getElementById("overlay").style.display = "none";
+      document.getElementById("svFrame").src = "";
+    }
+
+    function navStop(dir) {
+      const next = Math.min(stops.length - 1, Math.max(0, currentStop + dir));
+      openStop(next);
+    }
+
+    window.addEventListener("keydown", e => {
+      if (e.key === "Escape") closeOverlay();
+    });
+  </script>
+</head>
+
+<body>
+  <div class="hint">
+    <b>How to explore:</b> Walk with WASD or arrow keys. Click a station to open Street View + placard.
+  </div>
+
+  <div id="overlay">
+    <div id="overlayInner">
+      <div id="streetViewPanel">
+        <iframe
+          id="svFrame"
+          width="100%"
+          height="100%"
+          style="border:0;"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          allowfullscreen>
+        </iframe>
+      </div>
+      <div id="placardPanel">
+        <div id="placardTitle"></div>
+        <div id="placardBody"></div>
+        <div class="btnRow">
+          <button onclick="navStop(-1)">Back</button>
+          <button onclick="navStop(1)">Next</button>
+          <button class="danger" onclick="closeOverlay()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <a-scene background="color: #0b1320">
+    <a-entity light="type: ambient; intensity: 0.7"></a-entity>
+    <a-entity light="type: directional; intensity: 0.8" position="2 6 3"></a-entity>
+
+    <a-plane rotation="-90 0 0" width="32" height="32" color="#162033"></a-plane>
+
+    <a-entity position="0 1.6 6">
+      <a-camera wasd-controls look-controls>
+        <a-cursor></a-cursor>
+      </a-camera>
+    </a-entity>
+
+    <!-- Stations -->
+    <a-entity position="-6 0 -2">
+      <a-cylinder height="0.6" radius="0.6" color="#26395f"></a-cylinder>
+      <a-plane width="2.6" height="1.5" color="#35528a" position="0 1 0.01" onclick="openStop(0)"></a-plane>
+    </a-entity>
+
+    <a-entity position="-3 0 -6">
+      <a-cylinder height="0.6" radius="0.6" color="#26395f"></a-cylinder>
+      <a-plane width="2.6" height="1.5" color="#6b4a2a" position="0 1 0.01" onclick="openStop(1)"></a-plane>
+    </a-entity>
+
+    <a-entity position="2 0 -7">
+      <a-cylinder height="0.6" radius="0.6" color="#26395f"></a-cylinder>
+      <a-plane width="2.6" height="1.5" color="#2b6b4a" position="0 1 0.01" onclick="openStop(2)"></a-plane>
+    </a-entity>
+
+    <a-entity position="6 0 -3">
+      <a-cylinder height="0.6" radius="0.6" color="#26395f"></a-cylinder>
+      <a-plane width="2.6" height="1.5" color="#7b2f5f" position="0 1 0.01" onclick="openStop(3)"></a-plane>
+    </a-entity>
+
+    <a-entity position="7 0 2">
+      <a-cylinder height="0.6" radius="0.6" color="#26395f"></a-cylinder>
+      <a-plane width="2.6" height="1.5" color="#875e2a" position="0 1 0.01" onclick="openStop(4)"></a-plane>
+    </a-entity>
+
+    <a-entity position="3 0 6">
+      <a-cylinder height="0.6" radius="0.6" color="#26395f"></a-cylinder>
+      <a-plane width="2.6" height="1.5" color="#5b5b6f" position="0 1 0.01" onclick="openStop(5)"></a-plane>
+    </a-entity>
+
+  </a-scene>
+</body>
+</html>
