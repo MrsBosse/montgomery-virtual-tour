@@ -19,11 +19,12 @@
       padding: 10px 12px;
       border-radius: 10px;
       font-size: 14px;
-      max-width: 560px;
+      max-width: 620px;
       line-height: 1.25;
       z-index: 10;
     }
 
+    /* Overlay */
     #overlay {
       display: none;
       position: fixed;
@@ -88,7 +89,7 @@
   </style>
 
   <script>
-    // Street View embed URLs (your stops 1–6)
+    // Street View embed URLs (Stops 1–6)
     const EMBED = {
       stop1: "https://www.google.com/maps/embed?pb=!4v1769809550377!6m8!1m7!1sCAoSF0NJSE0wb2dLRUlDQWdJQzRxb3luekFF!2m2!1d32.37705521568272!2d-86.300345924515!3f358.20204604683346!4f10.293438786272901!5f0.7820865974627469",
       stop2: "https://www.google.com/maps/embed?pb=!4v1769809730972!6m8!1m7!1sq5zSn5iwqfjHi73vcj2nwQ!2m2!1d32.37726860765179!2d-86.3090617218252!3f55.51995094136487!4f-12.266507852019544!5f0.7820865974627469",
@@ -128,7 +129,7 @@
         embed: EMBED.stop3,
         body: `
           <b>Historical Read-Out:</b><br>
-          Rosa Parks’s refusal to give up her seat sparked the Montgomery Bus Boycott—showing how change can begin in everyday places.<br><br>
+          Rosa Parks’s resistance helped spark the Montgomery Bus Boycott—showing how change can begin in everyday places.<br><br>
           <b>Look Around:</b><br>
           How ordinary does this setting feel?<br><br>
           <b>Reflect:</b><br>
@@ -201,9 +202,11 @@
 
 <body>
   <div class="hint">
-    <b>How to explore:</b> Walk with WASD or arrow keys. Click a station to open Street View + placard.
+    <b>How to explore:</b> Use WASD or arrow keys to move. Click a station screen to open Street View + placard.
+    <br><b>Tip:</b> Encourage students to rotate, zoom, and read before answering reflection questions.
   </div>
 
+  <!-- Overlay -->
   <div id="overlay">
     <div id="overlayInner">
       <div id="streetViewPanel">
@@ -229,47 +232,89 @@
     </div>
   </div>
 
-  <a-scene background="color: #0b1320">
-    <a-entity light="type: ambient; intensity: 0.7"></a-entity>
-    <a-entity light="type: directional; intensity: 0.8" position="2 6 3"></a-entity>
+  <!-- 3D Hub -->
+  <a-scene background="color: #cfe7ff">
+    <!-- Assets -->
+    <a-assets>
+      <!-- IMPORTANT: upload montgomery-eji-map.jpg to the repo root -->
+      <img id="montgomeryMap" src="montgomery-eji-map.jpg" crossorigin="anonymous">
+    </a-assets>
 
-    <a-plane rotation="-90 0 0" width="32" height="32" color="#162033"></a-plane>
+    <!-- Lighting (brighter, less spooky) -->
+    <a-entity light="type: ambient; intensity: 0.95"></a-entity>
+    <a-entity light="type: directional; intensity: 0.85" position="2 6 3"></a-entity>
 
-    <a-entity position="0 1.6 6">
-      <a-camera wasd-controls look-controls>
+    <!-- Map floor -->
+    <a-plane
+      rotation="-90 0 0"
+      width="40"
+      height="28"
+      material="src: #montgomeryMap; side: double"
+      position="0 0 0">
+    </a-plane>
+
+    <!-- Platform border -->
+    <a-ring
+      position="0 0.02 0"
+      rotation="-90 0 0"
+      radius-inner="14"
+      radius-outer="14.4"
+      color="#ffffff">
+    </a-ring>
+
+    <!-- Camera -->
+    <a-entity position="0 1.6 10">
+      <a-camera wasd-controls="acceleration: 28" look-controls>
         <a-cursor></a-cursor>
       </a-camera>
     </a-entity>
 
+    <!-- Title board -->
+    <a-entity position="0 2.4 -10">
+      <a-plane width="10" height="1.6" color="#ffffff" opacity="0.85"></a-plane>
+      <a-text value="Montgomery Virtual Tour Hub" align="center" color="#111"
+              position="0 0.25 0.02" width="12"></a-text>
+      <a-text value="Click a station to open Street View + placard" align="center" color="#111"
+              position="0 -0.35 0.02" width="10"></a-text>
+    </a-entity>
+
     <!-- Stations -->
-    <a-entity position="-6 0 -2">
-      <a-cylinder height="0.6" radius="0.6" color="#26395f"></a-cylinder>
-      <a-plane width="2.6" height="1.5" color="#35528a" position="0 1 0.01" onclick="openStop(0)"></a-plane>
+    <!-- (These positions are symbolic; you can move them later to better match the map.) -->
+
+    <a-entity position="-12 0 -3">
+      <a-cylinder height="0.6" radius="0.6" color="#26395f" position="0 0.3 0"></a-cylinder>
+      <a-text value="1) Capitol" position="0 1.3 0" align="center" color="#111" width="4"></a-text>
+      <a-plane width="2.6" height="1.5" color="#35528a" position="0 1.0 0.01" onclick="openStop(0)"></a-plane>
     </a-entity>
 
-    <a-entity position="-3 0 -6">
-      <a-cylinder height="0.6" radius="0.6" color="#26395f"></a-cylinder>
-      <a-plane width="2.6" height="1.5" color="#6b4a2a" position="0 1 0.01" onclick="openStop(1)"></a-plane>
+    <a-entity position="-6 0 -8">
+      <a-cylinder height="0.6" radius="0.6" color="#26395f" position="0 0.3 0"></a-cylinder>
+      <a-text value="2) Court Square" position="0 1.3 0" align="center" color="#111" width="4"></a-text>
+      <a-plane width="2.6" height="1.5" color="#6b4a2a" position="0 1.0 0.01" onclick="openStop(1)"></a-plane>
     </a-entity>
 
-    <a-entity position="2 0 -7">
-      <a-cylinder height="0.6" radius="0.6" color="#26395f"></a-cylinder>
-      <a-plane width="2.6" height="1.5" color="#2b6b4a" position="0 1 0.01" onclick="openStop(2)"></a-plane>
+    <a-entity position="0 0 -10">
+      <a-cylinder height="0.6" radius="0.6" color="#26395f" position="0 0.3 0"></a-cylinder>
+      <a-text value="3) Rosa Parks" position="0 1.3 0" align="center" color="#111" width="4"></a-text>
+      <a-plane width="2.6" height="1.5" color="#2b6b4a" position="0 1.0 0.01" onclick="openStop(2)"></a-plane>
     </a-entity>
 
-    <a-entity position="6 0 -3">
-      <a-cylinder height="0.6" radius="0.6" color="#26395f"></a-cylinder>
-      <a-plane width="2.6" height="1.5" color="#7b2f5f" position="0 1 0.01" onclick="openStop(3)"></a-plane>
+    <a-entity position="8 0 -7">
+      <a-cylinder height="0.6" radius="0.6" color="#26395f" position="0 0.3 0"></a-cylinder>
+      <a-text value="4) Dexter Ave" position="0 1.3 0" align="center" color="#111" width="4"></a-text>
+      <a-plane width="2.6" height="1.5" color="#7b2f5f" position="0 1.0 0.01" onclick="openStop(3)"></a-plane>
     </a-entity>
 
-    <a-entity position="7 0 2">
-      <a-cylinder height="0.6" radius="0.6" color="#26395f"></a-cylinder>
-      <a-plane width="2.6" height="1.5" color="#875e2a" position="0 1 0.01" onclick="openStop(4)"></a-plane>
+    <a-entity position="12 0 -1">
+      <a-cylinder height="0.6" radius="0.6" color="#26395f" position="0 0.3 0"></a-cylinder>
+      <a-text value="5) Boycott Routes" position="0 1.3 0" align="center" color="#111" width="4"></a-text>
+      <a-plane width="2.6" height="1.5" color="#875e2a" position="0 1.0 0.01" onclick="openStop(4)"></a-plane>
     </a-entity>
 
-    <a-entity position="3 0 6">
-      <a-cylinder height="0.6" radius="0.6" color="#26395f"></a-cylinder>
-      <a-plane width="2.6" height="1.5" color="#5b5b6f" position="0 1 0.01" onclick="openStop(5)"></a-plane>
+    <a-entity position="4 0 7">
+      <a-cylinder height="0.6" radius="0.6" color="#26395f" position="0 0.3 0"></a-cylinder>
+      <a-text value="6) Memorial" position="0 1.3 0" align="center" color="#111" width="4"></a-text>
+      <a-plane width="2.6" height="1.5" color="#5b5b6f" position="0 1.0 0.01" onclick="openStop(5)"></a-plane>
     </a-entity>
 
   </a-scene>
